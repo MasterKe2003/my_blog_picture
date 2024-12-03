@@ -1,28 +1,30 @@
-name: GitHub to Tencent COS Sync
+name: GitHub to Alibaba OSS Sync  
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+on:  
+  push:  
+    branches:  
+      - main  
+  workflow_dispatch:  
 
-jobs:
-  sync-to-cos:
-    name: Sync to Tencent COS
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+jobs:  
+  sync-to-oss:  
+    name: Sync to Alibaba OSS  
+    runs-on: ubuntu-latest  
+    steps:  
+      - name: Checkout  
+        uses: actions/checkout@v3  
 
-      # Setup Rclone
-      - name: Setup Rclone
-        uses: AnimMouse/setup-rclone@v1
-        with:
-          rclone_config: ${{ secrets.RCLONE_CONFIG }}
-
-      # Sync to Tencent COS
-      - name: Rclone Sync
-        run: |
-          rclone sync ./ TencentCOS:${{ secrets.COS_BUCKET }} --transfers=8 --checkers=16 --exclude=.git/** --exclude=.github/** --exclude=README.md
-        env:
-          RCLONE_CONFIG_PASS: ${{ secrets.RCLONE_CONFIG_PASS }}
+      - name: Configure Rclone  
+        run: |  
+          curl https://rclone.org/install.sh | sudo bash
+          echo "[aliyunoss]" > /tmp/rclone.conf  
+          echo "type = s3" >> /tmp/rclone.conf  
+          echo "provider = Alibaba" >> /tmp/rclone.conf  
+          echo "access_key_id = ${{ secrets.ALIYUN_ACCESS_KEY_ID }}" >> /tmp/rclone.conf  
+          echo "secret_access_key = ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}" >> /tmp/rclone.conf  
+          echo "endpoint = ${{ secrets.ALIYUN_REGION }}.aliyuncs.com" >> /tmp/rclone.conf
+ 
+      - name: Rclone Sync  
+        run: |  
+          rclone --config /tmp/rclone.conf sync ./ aliyunoss:${{ secrets.ALIYUN_BUCKET }} --no-update-modtime --transfers=8 --checkers=16 --exclude=.git/** --exclude=.github/** --exclude=README.md -v
+          rm -f /tmp/rclone.conf
